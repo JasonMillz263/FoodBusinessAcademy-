@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -49,13 +49,15 @@
     h2 { text-align: center; margin-bottom: 20px; }
   </style>
 </head>
+
 <body>
 
 <div class="login-container">
   <h2>Student Login</h2>
+
   <input id="username" type="text" placeholder="Username">
   <input id="password" type="password" placeholder="Password">
-  
+
   <button id="loginBtn" onclick="login()">Login</button>
   <button id="signupBtn" onclick="signUp()">Sign Up</button>
 
@@ -70,73 +72,80 @@
     projectId: "foodbusinessacademy-f1c60",
     storageBucket: "foodbusinessacademy-f1c60.firebasestorage.app",
     messagingSenderId: "676124097300",
-    appId: "1:676124097300:web:e9949d6dfa21ff214de001",
-    measurementId: "G-D1JSR13KVE"
+    appId: "1:676124097300:web:e9949d6dfa21ff214de001"
   };
 
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
+
   const auth = firebase.auth();
   const db = firebase.firestore();
+  const message = document.getElementById("message");
 
-  window.onload = function() {
-    const message = document.getElementById("message");
+  // ================= SIGN UP =================
+  async function signUp() {
+    const username = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
 
-    async function signUp() {
-      const username = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
+    if (!username || !pass) {
+      message.innerText = "Please enter username and password.";
+      return;
+    }
 
-      if (!username || !pass) {
-        message.style.color = "red";
-        message.innerText = "Please enter username and password.";
+    const email = username + "@students.com";
+
+    try {
+      const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+      const uid = userCredential.user.uid;
+
+      await db.collection("Students Login").doc(uid).set({
+        username: username,
+        progress: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      message.style.color = "green";
+      message.innerText = "Account created. You can now login.";
+
+    } catch (error) {
+      message.style.color = "red";
+      message.innerText = error.message;
+    }
+  }
+
+  // ================= LOGIN =================
+  async function login() {
+    const username = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
+
+    if (!username || !pass) {
+      message.innerText = "Please enter username and password.";
+      return;
+    }
+
+    const email = username + "@students.com";
+
+    try {
+      const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+      const uid = userCredential.user.uid;
+
+      // Ensure student record exists
+      const doc = await db.collection("Students Login").doc(uid).get();
+
+      if (!doc.exists) {
+        message.innerText = "Student record not found.";
         return;
       }
 
-      const email = username + "@students.com";
+      // ✅ Redirect ALL students to ONE dashboard
+      window.location.href =
+        "https://foodbusinessacademdy.blogspot.com/p/student-dashboard.html";
 
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-        const uid = userCredential.user.uid;
-
-        await db.collection("Students Login").doc(uid).set({
-          username: username,
-          progress: 0,
-          createdAt: new Date()
-        });
-
-        message.style.color = "green";
-        message.innerText = "Account created! You may now login.";
-      } catch (error) {
-        message.style.color = "red";
-        message.innerText = error.message;
-      }
+    } catch (error) {
+      message.style.color = "red";
+      message.innerText = error.message;
     }
-
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
-
-      if (!username || !pass) {
-        message.style.color = "red";
-        message.innerText = "Please enter username and password.";
-        return;
-      }
-
-      const email = username + "@students.com";
-
-      try {
-        await auth.signInWithEmailAndPassword(email, pass);
-        window.location.href = "https://foodbusinessacademdy.blogspot.com/p/welcome-jason.html";
-      } catch (error) {
-        message.style.color = "red";
-        message.innerText = error.message;
-      }
-    }
-
-    // Expose functions globally
-    window.signUp = signUp;
-    window.login = login;
-  };
+  }
 </script>
 
 </body>
