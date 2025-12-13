@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
   <meta charset="UTF-8">
-  <title>Food Business Academy - Student Login</title>
-
-  <!-- Firebase COMPAT SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-  <style>
+  <title>Food Business Academy - Student Login</title>  <!-- Firebase COMPAT SDKs -->  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>  <style>
     body {
       font-family: Arial, sans-serif;
       background: #f9f9f9;
@@ -20,7 +12,7 @@
       margin: 0;
     }
     .login-container {
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       padding: 30px;
       background: #fff;
@@ -42,14 +34,7 @@
       border-radius: 6px;
       font-size: 16px;
       cursor: pointer;
-    }
-    #loginBtn {
       background: #0074D9;
-      color: white;
-      margin-bottom: 10px;
-    }
-    #forgotBtn {
-      background: #555;
       color: white;
     }
     #message {
@@ -61,94 +46,77 @@
       text-align: center;
       margin-bottom: 20px;
     }
-  </style>
-</head>
-
-<body>
-
-<div class="login-container">
-  <h2>Student Login</h2>
-
-  <input id="username" type="text" placeholder="Username">
-  <input id="password" type="password" placeholder="Password">
-
-  <button id="loginBtn" onclick="login()">Login</button>
-  <button id="forgotBtn" onclick="forgotPassword()">Forgot Password</button>
+  </style></head><body><div class="login-container">
+  <h2>Student Login</h2>  <input id="username" type="text" placeholder="Username" />
+  <input id="email" type="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Password" /><button onclick="login()">Login</button>
 
   <p id="message"></p>
-</div>
-
-<script>
-  // Firebase config
+</div><script>
+  // ================= FIREBASE CONFIG =================
   const firebaseConfig = {
     apiKey: "AIzaSyBAx6F9q-jBoKAGV_UNNVZj1_1f8ccVu98",
     authDomain: "foodbusinessacademy-f1c60.firebaseapp.com",
     projectId: "foodbusinessacademy-f1c60",
-    storageBucket: "foodbusinessacademy-f1c60.firebasestorage.app",
+    storageBucket: "foodbusinessacademy-f1c60.appspot.com",
     messagingSenderId: "676124097300",
     appId: "1:676124097300:web:e9949d6dfa21ff214de001"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 
   const auth = firebase.auth();
   const db = firebase.firestore();
   const message = document.getElementById("message");
 
-  // ================= LOGIN =================
+  // ================= LOGIN FUNCTION =================
   async function login() {
     const username = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    if (!username || !pass) {
-      message.innerText = "Please enter username and password.";
+    if (!username || !email || !password) {
+      message.innerText = "All fields are required.";
       return;
     }
 
-    const email = username + "@students.com";
-
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+      // 1. Sign in with email & password
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
       const uid = userCredential.user.uid;
 
-      // Verify student exists
-      const doc = await db.collection("Students Login").doc(uid).get();
+      // 2. Save / update login data
+      const pageUrl = window.location.href;
+
+      const studentRef = db.collection("students").doc(uid);
+
+      const doc = await studentRef.get();
+
       if (!doc.exists) {
         message.innerText = "Student record not found.";
         return;
       }
 
-      // Redirect to dashboard
-      window.location.href =
-        "https://foodbusinessacademdy.blogspot.com/p/student-dashboard.html";
+      await studentRef.update({
+        username: username,
+        email: email,
+        lastLoginPage: pageUrl,
+        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // 3. Redirect to student dashboard (stored in Firestore)
+      const studentData = doc.data();
+
+      if (!studentData.dashboardUrl) {
+        message.innerText = "No dashboard URL assigned.";
+        return;
+      }
+
+      window.location.href = studentData.dashboardUrl;
 
     } catch (error) {
       message.innerText = error.message;
     }
   }
-
-  // ================= FORGOT PASSWORD =================
-  async function forgotPassword() {
-    const username = document.getElementById("username").value.trim();
-
-    if (!username) {
-      message.innerText = "Enter your username to reset password.";
-      return;
-    }
-
-    const email = username + "@students.com";
-
-    try {
-      await auth.sendPasswordResetEmail(email);
-      message.style.color = "green";
-      message.innerText = "Password reset email sent. Check your inbox.";
-    } catch (error) {
-      message.style.color = "red";
-      message.innerText = error.message;
-    }
-  }
-</script>
-
-</body>
+</script></body>
 </html>
