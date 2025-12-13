@@ -43,21 +43,37 @@
       font-size: 16px;
       cursor: pointer;
     }
-    #loginBtn { background: #0074D9; color: white; margin-bottom: 10px; }
-    #signupBtn { background: #8A2BE2; color: white; }
-    #message { margin-top: 15px; text-align: center; color: red; }
-    h2 { text-align: center; margin-bottom: 20px; }
+    #loginBtn {
+      background: #0074D9;
+      color: white;
+      margin-bottom: 10px;
+    }
+    #forgotBtn {
+      background: #555;
+      color: white;
+    }
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      color: red;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
+
 <body>
 
 <div class="login-container">
   <h2>Student Login</h2>
+
   <input id="username" type="text" placeholder="Username">
   <input id="password" type="password" placeholder="Password">
-  
+
   <button id="loginBtn" onclick="login()">Login</button>
-  <button id="signupBtn" onclick="signUp()">Sign Up</button>
+  <button id="forgotBtn" onclick="forgotPassword()">Forgot Password</button>
 
   <p id="message"></p>
 </div>
@@ -70,73 +86,68 @@
     projectId: "foodbusinessacademy-f1c60",
     storageBucket: "foodbusinessacademy-f1c60.firebasestorage.app",
     messagingSenderId: "676124097300",
-    appId: "1:676124097300:web:e9949d6dfa21ff214de001",
-    measurementId: "G-D1JSR13KVE"
+    appId: "1:676124097300:web:e9949d6dfa21ff214de001"
   };
 
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
+
   const auth = firebase.auth();
   const db = firebase.firestore();
+  const message = document.getElementById("message");
 
-  window.onload = function() {
-    const message = document.getElementById("message");
+  // ================= LOGIN =================
+  async function login() {
+    const username = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
 
-    async function signUp() {
-      const username = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
+    if (!username || !pass) {
+      message.innerText = "Please enter username and password.";
+      return;
+    }
 
-      if (!username || !pass) {
-        message.style.color = "red";
-        message.innerText = "Please enter username and password.";
+    const email = username + "@students.com";
+
+    try {
+      const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+      const uid = userCredential.user.uid;
+
+      // Verify student exists
+      const doc = await db.collection("Students Login").doc(uid).get();
+      if (!doc.exists) {
+        message.innerText = "Student record not found.";
         return;
       }
 
-      const email = username + "@students.com";
+      // Redirect to dashboard
+      window.location.href =
+        "https://foodbusinessacademdy.blogspot.com/p/student-dashboard.html";
 
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-        const uid = userCredential.user.uid;
+    } catch (error) {
+      message.innerText = error.message;
+    }
+  }
 
-        await db.collection("Students Login").doc(uid).set({
-          username: username,
-          progress: 0,
-          createdAt: new Date()
-        });
+  // ================= FORGOT PASSWORD =================
+  async function forgotPassword() {
+    const username = document.getElementById("username").value.trim();
 
-        message.style.color = "green";
-        message.innerText = "Account created! You may now login.";
-      } catch (error) {
-        message.style.color = "red";
-        message.innerText = error.message;
-      }
+    if (!username) {
+      message.innerText = "Enter your username to reset password.";
+      return;
     }
 
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
+    const email = username + "@students.com";
 
-      if (!username || !pass) {
-        message.style.color = "red";
-        message.innerText = "Please enter username and password.";
-        return;
-      }
-
-      const email = username + "@students.com";
-
-      try {
-        await auth.signInWithEmailAndPassword(email, pass);
-        window.location.href = "https://foodbusinessacademdy.blogspot.com/p/welcome-jason.html";
-      } catch (error) {
-        message.style.color = "red";
-        message.innerText = error.message;
-      }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      message.style.color = "green";
+      message.innerText = "Password reset email sent. Check your inbox.";
+    } catch (error) {
+      message.style.color = "red";
+      message.innerText = error.message;
     }
-
-    // Expose functions globally
-    window.signUp = signUp;
-    window.login = login;
-  };
+  }
 </script>
 
 </body>
